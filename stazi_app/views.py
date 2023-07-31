@@ -284,10 +284,5 @@ def get_winner(request):
     # Find the highest bidder with the highest bid amount for the specified auction
     highest_bidder = Bid.objects.filter(auction_id=auction_id, bid_amount=highest_bid).first()
 
-    if highest_bidder:
-        return Response({"winner":highest_bidder.user_id.username, "bid":highest_bidder.bid_amount},status=status.HTTP_200_OK)
-    else:
-        
-        return Response({"winner":"No winner"},status=status.HTTP_200_OK)
-    
+
     
