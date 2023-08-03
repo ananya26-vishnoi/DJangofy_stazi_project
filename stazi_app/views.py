@@ -106,6 +106,25 @@ def user_login(request):
     token_serializer=TokenSerializer(token)
     return Response({"user":user_serializer.data,"token":token_serializer.data},status=status.HTTP_200_OK)
  
+@api_view(['POST'])
+def create_auction(request):
+    if "token_value" not in request.data:
+        return Response({"error":"token_value is required"},status=status.HTTP_400_BAD_REQUEST)
+    role=Token.objects.get(token_value=request.data["token_value"]).user_id.role
+    if role!='admin':
+        return Response({"error":"Should be Admin"},status=status.HTTP_400_BAD_REQUEST)
+    if "start_time" not in request.data or "end_time" not in request.data or "start_price" not in request.data or "item_name" not in request.data:
+        return Response({"error":"start_time, end_time, start_price, and item_name are required"},status=status.HTTP_400_BAD_REQUEST)
+    
+    start_time=request.data["start_time"]
+    end_time=request.data["end_time"]
+    start_price=request.data["start_price"]
+    item_name=request.data["item_name"]
+
+    auction=Auction.objects.create(start_time=start_time,end_time=end_time,start_price=start_price,item_name=item_name)
+    auction.save()
+    auction_serializer=AuctionSerializer(auction)
+    return Response(auction_serializer.data,status=status.HTTP_201_CREATED)
 
 @api_view(['PUT'])
 def update_auction(request):
