@@ -231,3 +231,61 @@ def get_auction(request):
     else:
         return Response({"error":"Not valid"},status=status.HTTP_400_BAD_REQUEST)
  
+@api_view(['POST'])
+def bid(request):
+    if "token_value" not in request.data:
+        return Response({"error":"token_value is required"},status=status.HTTP_400_BAD_REQUEST)
+    tokenValue=request.data["token_value"]
+    if not Token.objects.filter(token_value=tokenValue).exists():
+        return Response({"error":"token does not exist"},status=status.HTTP_400_BAD_REQUEST)
+    role = Token.objects.get(token_value=tokenValue)
+    role=role.user_id.role
+    if role!='user':
+        return Response({"error":"only users can bid"},status=status.HTTP_400_BAD_REQUEST)
+    if "auction_id" not in request.data:
+        return Response({"error":"auction_id is required"},status=status.HTTP_400_BAD_REQUEST)
+    auction_id=request.data["auction_id"]
+    if not Auction.objects.filter(id=auction_id).exists():
+        return Response({"error":"auction does not exist"},status=status.HTTP_400_BAD_REQUEST)
+    auction=Auction.objects.get(id=auction_id)
+    current_time = timezone.now()
+    if auction.start_time > current_time or current_time > auction.end_time:
+        return Response({"error":"auction is not active"},status=status.HTTP_400_BAD_REQUEST)        
+    if "bid_amount" not in request.data:
+        return Response({"error":"bid_amount is required"},status=status.HTTP_400_BAD_REQUEST)
+    bid_amount=request.data["bid_amount"]
+    if bid_amount<auction.start_price:
+        return Response({"error":"bid_amount is less than start_price"},status=status.HTTP_400_BAD_REQUEST)
+    user_id=Token.objects.get(token_value=tokenValue).user_id
+    bid=Bid.objects.create(auction_id=auction,user_id=user_id,bid_amount=bid_amount)
+    bid.save()
+    bid_serializer=BidSerializer(bid)
+    return Response(bid_serializer.data,status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+def get_winner(request):
+    if "auction_id" not in request.data:
+        return Response({"error":"auction_id is required"},status=status.HTTP_400_BAD_REQUEST)
+    auction_id=request.data["auction_id"]
+    if not Auction.objects.filter(id=auction_id).exists():
+        return Response({"error":"auction does not exist"},status=status.HTTP_400_BAD_REQUEST)
+    auction=Auction.objects.get(id=auction_id)
+
+    current_time=timezone.now()
+    print(current_time)
+    print(auction.end_time)
+    if current_time < auction.end_time:
+        return Response({"error":"auction is not ended"},status=status.HTTP_400_BAD_REQUEST)
+    
+    highest_bid = Bid.objects.filter(auction_id=auction_id).aggregate(Max('bid_amount'))['bid_amount__max']
+
+    # Find the highest bidder with the highest bid amount for the specified auction
+    highest_bidder = Bid.objects.filter(auction_id=auction_id, bid_amount=highest_bid).first()
+
+    if highest_bidder:
+        return Response({"winner":highest_bidder.user_id.username, "bid":highest_bidder.bid_amount},status=status.HTTP_200_OK)
+    else:
+        return Response({"winner":"No winner"},status=status.HTTP_200_OK)
+    
+    
+    
