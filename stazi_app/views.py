@@ -59,21 +59,6 @@ def update_user(request):
     user_serializer=UserSerializer(user)
     return Response(user_serializer.data,status=status.HTTP_200_OK)
 
-@api_view(['DELETE'])
-def delete_user(request):
-    if "email" not in request.data:
-        return Response({"error":"email is required"},status=status.HTTP_400_BAD_REQUEST)
-    if "password" not in request.data:
-        return Response({"error":"password is required"},status=status.HTTP_400_BAD_REQUEST)
-    
-    email=request.data["email"]
-    password=request.data["password"]
-
-    if not User.objects.filter(email=email, password=password).exists():
-        return Response({"error":"profile does not exist"},status=status.HTTP_400_BAD_REQUEST)
-    user=User.objects.get(email=email)
-    user.delete()
-    return Response({"success":"user deleted"},status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 def user_login(request):
