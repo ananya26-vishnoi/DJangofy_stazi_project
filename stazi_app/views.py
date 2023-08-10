@@ -103,3 +103,131 @@ def user_login(request):
     token_serializer=TokenSerializer(token)
     return Response({"user":user_serializer.data,"token":token_serializer.data},status=status.HTTP_200_OK)
  
+@api_view(['POST'])
+def create_auction(request):
+    if "token_value" not in request.data:
+        return Response({"error":"token_value is required"},status=status.HTTP_400_BAD_REQUEST)
+    role=Token.objects.get(token_value=request.data["token_value"]).user_id.role
+    if role!='admin':
+        return Response({"error":"Should be Admin"},status=status.HTTP_400_BAD_REQUEST)
+    if "start_time" not in request.data or "end_time" not in request.data or "start_price" not in request.data or "item_name" not in request.data:
+        return Response({"error":"start_time, end_time, start_price, and item_name are required"},status=status.HTTP_400_BAD_REQUEST)
+    
+    start_time=request.data["start_time"]
+    end_time=request.data["end_time"]
+    start_price=request.data["start_price"]
+    item_name=request.data["item_name"]
+
+    auction=Auction.objects.create(start_time=start_time,end_time=end_time,start_price=start_price,item_name=item_name)
+    auction.save()
+    auction_serializer=AuctionSerializer(auction)
+    return Response(auction_serializer.data,status=status.HTTP_201_CREATED)
+
+@api_view(['PUT'])
+def update_auction(request):
+    if "token_value" not in request.data:
+        return Response({"error":"token_value is required"},status=status.HTTP_400_BAD_REQUEST)
+    role=Token.objects.get(token_value=request.data["token_value"]).user_id.role
+    if role!='admin':
+        return Response({"error":"Should be Admin"},status=status.HTTP_400_BAD_REQUEST)
+    
+    if "auction_id" not in request.data:
+        return Response({"error":"auction_id is required"},status=status.HTTP_400_BAD_REQUEST)
+    
+    auction_id=request.data["auction_id"]
+
+    if not Auction.objects.filter(id=auction_id).exists():
+        return Response({"error":"auction does not exist"},status=status.HTTP_400_BAD_REQUEST)
+    
+    if "start_time" in request.data:
+        start_time=request.data["start_time"]
+        Auction.objects.filter(id=auction_id).update(start_time=start_time)
+
+    if "end_time" in request.data:
+        end_time=request.data["end_time"]
+        Auction.objects.filter(id=auction_id).update(end_time=end_time)
+
+    if "start_price" in request.data:
+        start_price=request.data["start_price"]
+        Auction.objects.filter(id=auction_id).update(start_price=start_price)
+
+    if "item_name" in request.data:
+        item_name=request.data["item_name"]
+        Auction.objects.filter(id=auction_id).update(item_name=item_name)
+
+    auction=Auction.objects.get(id=auction_id)
+    auction_serializer=AuctionSerializer(auction)
+    return Response(auction_serializer.data,status=status.HTTP_200_OK)
+
+@api_view(['DELETE'])
+def delete_auction(request):
+    if "token_value" not in request.data:
+        return Response({"error":"token_value is required"},status=status.HTTP_400_BAD_REQUEST)
+    role=Token.objects.get(token_value=request.data["token_value"]).user_id.role
+    if role!='admin':
+        return Response({"error":"Should be Admin"},status=status.HTTP_400_BAD_REQUEST)
+    if "auction_id" not in request.data:
+        return Response({"error":"auction_id is required"},status=status.HTTP_400_BAD_REQUEST)
+    
+    auction_id=request.data["auction_id"]
+
+    if not Auction.objects.filter(id=auction_id).exists():
+        return Response({"error":"auction does not exist"},status=status.HTTP_400_BAD_REQUEST)
+    auction=Auction.objects.get(id=auction_id)
+    auction.delete()
+    return Response({"success":"auction deleted"},status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_user(request):
+    if "token_value" not in request.data:
+        return Response({"error":"token_value is required"},status=status.HTTP_400_BAD_REQUEST)
+    tokenValue=request.data["token_value"]
+    if not Token.objects.filter(token_value=tokenValue).exists():
+        return Response({"error":"token does not exist"},status=status.HTTP_400_BAD_REQUEST)
+    role = Token.objects.get(token_value=tokenValue)
+    role=role.user_id.role
+
+    if role !="admin":
+        return Response({"error":"Not valid"},status=status.HTTP_400_BAD_REQUEST)
+    
+    if "user_ids" not in request.data:
+        return Response({"error":"User ID does not exist"},status=status.HTTP_400_BAD_REQUEST)
+    
+    user_IDs=request.data["user_ids"]
+    if type(user_IDs)!=list:
+        return Response({"error":"user ID should be list"},status=status.HTTP_400_BAD_REQUEST)
+    
+    if len(user_IDs)==0:
+        user=User.objects.all()
+        user_serializer=UserSerializer(user,many=True)
+        return Response (user_serializer.data,status=status.HTTP_200_OK)
+    
+    user = User.objects.filter(id__in=user_IDs)
+    
+    if len(user)>1:
+        user_serializer=UserSerializer(user,many=True)
+    else:
+        user_serializer=UserSerializer(user)
+
+    return Response(user_serializer.data,status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def get_auction(request):
+    if "token_value" not in request.data:
+        return Response({"error":"token_value is required"},status=status.HTTP_400_BAD_REQUEST)
+    tokenValue=request.data["token_value"]
+    if not Token.objects.filter(token_value=tokenValue).exists():
+        return Response({"error":"token does not exist"},status=status.HTTP_400_BAD_REQUEST)
+    role = Token.objects.get(token_value=tokenValue)
+    role=role.user_id.role
+    if role=='admin':
+        auction=Auction.objects.all()
+        auction_serializer=AuctionSerializer(auction,many=True)
+        return Response (auction_serializer.data,status=status.HTTP_200_OK)
+    elif role=='user':
+        auction=Auction.get_current_auctions()
+        auction_serializer=AuctionSerializer(auction,many=True)
+        return Response (auction_serializer.data,status=status.HTTP_200_OK)
+    else:
+        return Response({"error":"Not valid"},status=status.HTTP_400_BAD_REQUEST)
+ 
