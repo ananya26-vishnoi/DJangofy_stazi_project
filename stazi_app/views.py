@@ -4,8 +4,8 @@ from .models import *
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import os
-from dotenv import load_dotenv 
-load_dotenv()
+from dotenv import load_dotenv
+from django.utils import timezone
 from .serializers import *
 from rest_framework.response import Response
 from rest_framework import status
@@ -262,30 +262,7 @@ def bid(request):
     bid_serializer=BidSerializer(bid)
     return Response(bid_serializer.data,status=status.HTTP_201_CREATED)
 
-@api_view(['GET'])
-def get_winner(request):
-    if "auction_id" not in request.data:
-        return Response({"error":"auction_id is required"},status=status.HTTP_400_BAD_REQUEST)
-    auction_id=request.data["auction_id"]
-    if not Auction.objects.filter(id=auction_id).exists():
-        return Response({"error":"auction does not exist"},status=status.HTTP_400_BAD_REQUEST)
-    auction=Auction.objects.get(id=auction_id)
 
-    current_time=timezone.now()
-    print(current_time)
-    print(auction.end_time)
-    if current_time < auction.end_time:
-        return Response({"error":"auction is not ended"},status=status.HTTP_400_BAD_REQUEST)
-    
-    highest_bid = Bid.objects.filter(auction_id=auction_id).aggregate(Max('bid_amount'))['bid_amount__max']
-
-    # Find the highest bidder with the highest bid amount for the specified auction
-    highest_bidder = Bid.objects.filter(auction_id=auction_id, bid_amount=highest_bid).first()
-
-    if highest_bidder:
-        return Response({"winner":highest_bidder.user_id.username},status=status.HTTP_200_OK)
-    else:
-        return Response({"winner":"No winner"},status=status.HTTP_200_OK)
     
     
     
