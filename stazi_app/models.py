@@ -15,7 +15,7 @@ class Auction(models.Model):
     end_time = models.TimeField()
     start_price = models.IntegerField(default=0)
     item_name = models.CharField(max_length=1000)
-    winner_user_id = models.ForeignKey(User,on_delete=models.CASCADE)
+    winner_user_id = models.ForeignKey(User,on_delete=models.CASCADE,blank=True,null=True)
 
 class Bid(models.Model):
     auction_id = models.ForeignKey(Auction,on_delete=models.CASCADE)
