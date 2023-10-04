@@ -48,11 +48,11 @@ def update_user(request):
     if not User.objects.filter(email=email, password=password).exists():
         return Response({"error":"email or password id wrong"},status=status.HTTP_400_BAD_REQUEST)
     
-    if "role" in request.data:
-        role=request.data["role"]
-        if role!='admin' and role!='user' :
-            return Response({"error":"role must be either admin or user"},status=status.HTTP_400_BAD_REQUEST)
-        User.objects.filter(email=email).update(role=role)
+    # if "role" in request.data:
+    #     role=request.data["role"]
+    #     if role!='admin' and role!='user' :
+    #         return Response({"error":"role must be either admin or user"},status=status.HTTP_400_BAD_REQUEST)
+    #     User.objects.filter(email=email).update(role=role)
 
     if "new_password" in request.data:
         new_password=request.data["new_password"]
@@ -170,6 +170,39 @@ def delete_auction(request):
     auction.delete()
     return Response({"success":"auction deleted"},status=status.HTTP_200_OK)
 
+@api_view(['GET'])
+def get_user(request):
+    if "token_value" not in request.data:
+        return Response({"error":"token_value is required"},status=status.HTTP_400_BAD_REQUEST)
+    tokenValue=request.data["token_value"]
+    if not Token.objects.filter(token_value=tokenValue).exists():
+        return Response({"error":"token does not exist"},status=status.HTTP_400_BAD_REQUEST)
+    role = Token.objects.get(token_value=tokenValue)
+    role=role.user_id.role
+
+    if role !="admin":
+        return Response({"error":"Not valid"},status=status.HTTP_400_BAD_REQUEST)
+    
+    if "user_ids" not in request.data:
+        return Response({"error":"User ID does not exist"},status=status.HTTP_400_BAD_REQUEST)
+    
+    user_IDs=request.data["user_ids"]
+    if type(user_IDs)!=list:
+        return Response({"error":"user ID should be list"},status=status.HTTP_400_BAD_REQUEST)
+    
+    if len(user_IDs)==0:
+        user=User.objects.all()
+        user_serializer=UserSerializer(user,many=True)
+        return Response (user_serializer.data,status=status.HTTP_200_OK)
+    
+    user = User.objects.filter(id__in=user_IDs)
+    
+    if len(user)>1:
+        user_serializer=UserSerializer(user,many=True)
+    else:
+        user_serializer=UserSerializer(user)
+
+    return Response(user_serializer.data,status=status.HTTP_200_OK)
 
     
 

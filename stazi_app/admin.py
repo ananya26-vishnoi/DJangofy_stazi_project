@@ -7,5 +7,4 @@ from .models import Bid
 admin.site.register(User)
 admin.site.register(Token)
 admin.site.register(Auction)
-
 admin.site.register(Bid)
