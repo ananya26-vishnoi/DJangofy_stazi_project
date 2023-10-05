@@ -56,3 +56,7 @@ This command will read the requirements.txt file and automatically install all t
 Please ensure that you add all the necessary sensitive information, such as database credentials and API keys, to the .env file. This file is used to store this information securely and is not pushed to GitHub by default. However, please note that we have added the .env file to the repository, but it is empty to ensure that you can fill it out with the required data.
 
 To prevent any accidental disclosure of sensitive information, make sure to add the .env file to the .gitignore file before committing your code to the repository. This way, you can keep your data secure while still being able to utilize the benefits of version control.
+
+# Documentation
+https://documenter.getpostman.com/view/17181619/2s9YJexgGE
+

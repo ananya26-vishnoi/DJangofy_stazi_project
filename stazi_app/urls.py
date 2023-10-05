@@ -10,4 +10,7 @@ urlpatterns = [
     path('updateAuction',views.update_auction,name="update_auction"),
     path('deleteAuction',views.delete_auction,name="delete_auction"),
     path('getUsers',views.get_user,name="get_user"),
+    path('getAuctions',views.get_auction,name="get_auction"),
+    path('createBid',views.bid,name="bid"),
+    path('getWinner',views.get_winner,name="get_winner")
 ]
